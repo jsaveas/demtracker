@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#101b2b" />
+<title>2026 Senate Control Tracker | Refresh Kalshi Odds</title>
+<style>
+  :root { color-scheme: dark; --bg:#0b1422; --surface:#142237; --surface2:#192b42; --border:#2d435e; --text:#edf4ff; --muted:#a6b8ce; --blue:#5da6ff; --blue2:#2c72ce; --red:#fc8c8c; --green:#70d3ab; --amber:#f3c67c; --track:#2c3e53; }
+  * {box-sizing:border-box}
+  body {margin:0; padding:32px 20px 55px; background: radial-gradient(circle at top right, #203753 0, var(--bg) 42%) fixed; color:var(--text); font: 15px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  button,input {font:inherit}
+  .wrap {max-width:1050px;margin:auto}
+  .eyebrow{color:#8dbdff;font-weight:750;font-size:12px;letter-spacing:.15em;text-transform:uppercase;margin:0 0 10px}
+  h1 {font-weight:780;font-size:clamp(27px,4.2vw,43px);letter-spacing:-.04em;line-height:1.13;margin:0}
+  .intro{max-width:780px;color:var(--muted);font-size:16px;margin:15px 0 26px}
+  .topline{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap}
+  .tag{border:1px solid #355174;padding:7px 12px;border-radius:999px;color:#bed4ee;background:#152b43;white-space:nowrap;font-size:13px;font-weight:650}
+  .cards{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:14px}
+  .card,.panel{background:linear-gradient(150deg,#192b40,#132236);border:1px solid var(--border);border-radius:18px;box-shadow:0 16px 50px #0000001b}
+  .card{padding:21px 23px;min-height:175px}
+  .metric-label{color:var(--muted);font-size:13px;letter-spacing:.02em;font-weight:650}
+  .metric{font-size:clamp(31px,4vw,44px);font-weight:800;letter-spacing:-.05em;line-height:1.05;margin:10px 0 7px}
+  .metric small{font-weight:650;color:var(--muted);font-size:.42em;letter-spacing:0}
+  .sub{font-size:13px;color:var(--muted)}
+  .status{font-weight:750;font-size:14px;margin-top:12px}
+  .status.green{color:var(--green)} .status.amber{color:var(--amber)} .status.blue{color:#9bc7ff}
+  .seat-bar{display:flex;width:100%;height:13px;border-radius:20px;overflow:hidden;background:var(--track);margin:17px 0 12px}
+  .d-seats{background:linear-gradient(90deg,#3174d9,#72b7ff);transition:width .3s ease}
+  .r-seats{background:linear-gradient(90deg,#eb6d76,#a7405c);flex:1;transition:width .3s ease}
+  .legend{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--muted)}
+  .legend span{display:flex;gap:6px;align-items:center}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:2px}
+  .blue-dot{background:#5da6ff}.red-dot{background:#e9737f}
+  .progress{height:12px;overflow:hidden;border-radius:99px;background:#34465c;margin:18px 0 12px}
+  .progress>div{height:100%;width:0;background:linear-gradient(90deg,#4385e9,#68c1ff);transition:width .25s ease}
+  .layout{display:grid;grid-template-columns:1.25fr 1fr;gap:18px;margin-top:20px}
+  .panel{padding:23px}
+  h2{font-size:19px;letter-spacing:-.025em;margin:0 0 6px}
+  .panel-head{margin-bottom:18px}
+  .panel-head p{color:var(--muted);font-size:13px;margin:0}
+  .races{display:grid;gap:8px}
+  .race{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:58px;background:#1a2c43;border:1px solid #31445c;border-radius:11px;padding:10px 13px;cursor:pointer;user-select:none;transition:background .15s,border-color .15s}
+  .race:hover{background:#223850;border-color:#4b7094}
+  .race:focus-within{outline:2px solid #7ebaff;outline-offset:2px}
+  .race.selected{background:#143453;border-color:#3e7fb9}
+  .race.resisted{background:#392a3a;border-color:#88506a}
+  .race-name{font-weight:700;font-size:15px;display:block}
+  .race-note{font-size:12px;color:var(--muted);display:block;margin-top:2px}
+  .race label{cursor:pointer}
+  .race input{width:21px;height:21px;accent-color:#579bf3;cursor:pointer;flex-shrink:0}
+  .race .side-label{font-weight:700;font-size:12px;color:#95c6ff;white-space:nowrap}
+  .race.resisted .side-label{color:#ffc3c3}
+  .defense{display:grid;gap:9px}
+  .footnote{margin-top:21px;color:var(--muted);font-size:13px;line-height:1.65}
+  .footnote strong{color:#d6e6fa}
+  .actions{display:flex;justify-content:flex-end;gap:9px;flex-wrap:wrap;margin-top:20px}
+  button{border:1px solid #41617f;background:#263e58;color:var(--text);border-radius:10px;padding:10px 15px;cursor:pointer;font-weight:700}
+  button:hover{background:#335272}
+  button:focus-visible{outline:2px solid #80bbff;outline-offset:2px}
+  button.primary{background:#2565b8;border-color:#478deb}
+  button.primary:hover{background:#3279cc}
+  .bottom{border-top:1px solid #263c56;margin-top:22px;padding-top:15px;color:#95a9c0;font-size:12px}
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+  .toast{margin-top:12px;min-height:22px;color:var(--green);font-size:12px;text-align:right}
+  @media(max-width:760px){body{padding:20px 13px 35px}.cards{grid-template-columns:1fr 1fr}.cards>.card:first-child{grid-column:span 2}.layout{grid-template-columns:1fr}.card,.panel{padding:18px}.topline{gap:10px}.tag{white-space:normal}}
+  @media(max-width:410px){.metric{font-size:32px}.metric-label{font-size:12px}.card{padding:14px}.race{gap:8px}.race-name{font-size:14px}.side-label{font-size:11px!important}}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+
+  /* Election Day prediction-market odds; refresh by button */
+  .odds-banner{margin:0 0 20px;padding:16px 19px;display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;background:#192c44;border:1px solid #49698c;border-radius:14px}
+  .odds-banner .stamp{font-size:12px;color:#98c4ff;letter-spacing:.1em;font-weight:780;text-transform:uppercase;margin:0 0 3px}
+  .odds-banner strong{font-size:15px}
+  .odds-banner p:last-child{margin:4px 0 0;color:#bbcadb;font-size:12px}
+  .race-info{min-width:0;flex:1}
+  .market-odds{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .prob{display:inline-block;padding:2px 8px;border-radius:6px;font-size:12px;font-weight:760;letter-spacing:.005em;font-variant-numeric:tabular-nums}
+  .prob.dem{background:#204467;color:#a5ceff;border:1px solid #376c9e}
+  .prob.rep{background:#522e41;color:#ffb2b6;border:1px solid #835066}
+  .source-notice{font-size:12px;color:#b3c6dc;line-height:1.65;margin-top:17px;padding:11px 13px;background:#20344c;border-radius:9px}
+  .source-notice strong{color:#f2f7ff}
+  @media(max-width:410px){.market-odds{gap:4px}.prob{padding:2px 5px;font-size:11px}}
+  .odds-banner{align-items:center}
+  .odds-banner>div{flex:1;min-width:220px}
+  .odds-banner #refresh-odds{white-space:nowrap;min-width:175px}
+  .odds-banner #refresh-odds:disabled{opacity:.65;cursor:wait}
+  .odds-feedback{flex-basis:100%;font-size:12px!important;margin:0!important;color:#b9cfe7!important}
+  .odds-feedback.warn{color:var(--amber)!important}
+  .odds-feedback.ok{color:var(--green)!important}
+  .price-status{color:#aebed2;font-size:11px;font-weight:650}
+  .price-status.updated{color:var(--green)}
+  .price-status.failed{color:var(--amber)}
+  @media(max-width:600px){.odds-banner #refresh-odds{width:100%}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="topline">
+    <div>
+      <p class="eyebrow">Election Night • November 3, 2026</p>
+      <h1>Senate Control Tracker</h1>
+    </div>
+    <div class="tag">Interactive scenario • Refreshable odds</div>
+  </header>
+  <p class="intro">Track the seven Republican-held pickup opportunities and three key Democratic defenses. Select the outcomes as races are called—or explore different scenarios. Your selections are saved on this device.</p>
+  <section class="odds-banner" aria-label="Kalshi market probabilities">
+    <div>
+      <p class="stamp">Kalshi race odds</p>
+      <strong id="odds-stamp">Saved snapshot · November 3, 2026</strong>
+      <p id="odds-description">Races are sorted from highest to lowest Democratic win probability within each section. Refresh to update both prices and order. Internet required.</p>
+    </div>
+    <button id="refresh-odds" type="button" class="primary" aria-describedby="odds-description">↻ Refresh Live Odds</button>
+    <p id="odds-feedback" class="odds-feedback" role="status" aria-live="polite">Showing saved odds until you refresh.</p>
+  </section>
+  <section class="cards" aria-label="Senate control summary">
+    <div class="card">
+      <div class="metric-label">Projected Senate balance</div>
+      <div class="metric" id="seat-count" aria-live="polite">47 D <small>–</small> 53 R</div>
+      <div class="seat-bar" role="img" id="seat-graphic" aria-label="47 Democratic caucus seats and 53 Republican seats"><div class="d-seats" id="d-seats" style="width:47%"></div><div class="r-seats"></div></div>
+      <div class="legend"><span><i class="dot blue-dot"></i>Democratic caucus</span><span><i class="dot red-dot"></i>Republicans</span></div>
+    </div>
+    <div class="card">
+      <div class="metric-label">Net Democratic pickups</div>
+      <div class="metric" id="net-count" aria-live="polite">+0 <small>/ +4 needed</small></div>
+      <div class="progress" aria-hidden="true"><div id="progress-fill"></div></div>
+      <div class="sub" id="remaining">4 more net seats needed</div>
+    </div>
+    <div class="card">
+      <div class="metric-label">Senate majority</div>
+      <div class="status blue" id="control-label" role="status" aria-live="polite">Republicans control</div>
+      <p class="sub" id="control-explainer">Republicans hold more than 50 seats in this scenario.</p>
+      <p class="sub" style="margin-top:15px">51 D seats = Democratic majority</p>
+    </div>
+  </section>
+
+  <div class="layout">
+    <section class="panel" aria-labelledby="pickups-heading">
+      <div class="panel-head">
+        <h2 id="pickups-heading">Republican-held seats to flip <span id="flip-counter" style="color:#a7c9f5;font-weight:600;font-size:14px">(0 of 7)</span></h2>
+        <p>Check a state if Democrats win the seat. Unchecked means a Republican hold in this scenario.</p>
+      </div>
+      <div class="races" id="pickup-list">
+        <label class="race" data-key="NC" data-ticker="SENATENC-26-D"><span class="race-info"><span class="race-name">North Carolina</span><span class="race-note">Roy Cooper (D) vs. Michael Whatley (R)</span><span class="market-odds" aria-label="Kalshi snapshot: Democrats 97.6 percent, Republicans 2.4 percent"><span class="prob dem" title="Roy Cooper">D 97.6%</span><span class="prob rep" title="Michael Whatley">R 2.4%</span><span class="price-status" aria-label="Quote status">Snapshot</span></span></span><span class="side-label">D pickup <input type="checkbox" data-type="flip" data-state="NC" aria-label="Democrats flip North Carolina"></span></label>
+        <label class="race" data-key="OH" data-ticker="SENATEOHS-26-D"><span class="race-info"><span class="race-name">Ohio</span><span class="race-note">Sherrod Brown (D) vs. Jon Husted (R)</span><span class="market-odds" aria-label="Kalshi snapshot: Democrats 71 percent, Republicans 29 percent"><span class="prob dem" title="Sherrod Brown">D 71%</span><span class="prob rep" title="Jon Husted">R 29%</span><span class="price-status" aria-label="Quote status">Snapshot</span></span></span><span class="side-label">D pickup <input type="checkbox" data-type="flip" data-state="OH" aria-label="Democrats flip Ohio"></span></label>
+        <label class="race" data-key="ME" data-ticker="SENATEME-26-D"><span class="race-info"><span class="race-name">Maine</span><span class="race-note">Troy Jackson (D) vs. Susan Collins (R)</span><span class="market-odds" aria-label="Kalshi snapshot: Democrats 73 percent, Republicans 27 percent"><span class="prob dem" title="Troy Jackson">D 73%</span><span class="prob rep" title="Susan Collins">R 27%</span><span class="price-status" aria-label="Quote status">Snapshot</span></span></span><span class="side-label">D pickup <input type="checkbox" data-type="flip" data-state="ME" aria-label="Democrats flip Maine"></span></label>
+        <label class="race" data-key="TX" data-ticker="SENATETX-26-D"><span class="race-info"><span class="race-name">Texas</span><span class="race-note">James Talarico (D) vs. Ken Paxton (R)</span><span class="market-odds" aria-label="Kalshi snapshot: Democrats 71 percent, Republicans 29 percent"><span class="prob dem" title="James Talarico">D 71%</span><span class="prob rep" title="Ken Paxton">R 29%</span><span class="price-status" aria-label="Quote status">Snapshot</span></span></span><span class="side-label">D pickup <input type="checkbox" data-type="flip" data-state="TX" aria-label="Democrats flip Texas"></span></label>
+        <label class="race" data-key="KS" data-ticker="SENATEKS-26-D"><span class="race-info"><span class="race-name">Kansas</span><span class="race-note">Adam Hamilton (D) vs. Roger Marshall (R)</span><span class="market-odds" aria-label="Kalshi snapshot: Democrats 62 percent, Republicans 38 percent"><span class="prob dem" title="Adam Hamilton">D 62%</span><span class="prob rep" title="Roger Marshall">R 38%</span><span class="price-status" aria-label="Quote status">Snapshot</span></span></span><span class="side-label">D pickup <input type="checkbox" data-type="flip" data-state="KS" aria-label="Democrats flip Kansas"></span></label>
+        <label class="race" data-key="IA" data-ticker="SENATEIA-26-D"><span class="race-info"><span class="race-name">Iowa</span><span class="race-note">Josh Turek (D) vs. Ashley Hinson (R)</span><span class="market-odds" aria-label="Kalshi snapshot: Democrats 52 percent, Republicans 48 percent"><span class="prob dem" title="Josh Turek">D 52%</span><span class="prob rep" title="Ashley Hinson">R 48%</span><span class="price-status" aria-label="Quote status">Snapshot</span></span></span><span class="side-label">D pickup <input type="checkbox" data-type="flip" data-state="IA" aria-label="Democrats flip Iowa"></span></label>
+        <label class="race" data-key="AK" data-ticker="SENATEAK-26-D"><span class="race-info"><span class="race-name">Alaska</span><span class="race-note">Mary Peltola (D) vs. Dan Sullivan (R)</span><span class="market-odds" aria-label="Kalshi snapshot: Democrats 71 percent, Republicans 29 percent"><span class="prob dem" title="Mary Peltola">D 71%</span><span class="prob rep" title="Dan Sullivan">R 29%</span><span class="price-status" aria-label="Quote status">Snapshot</span></span></span><span class="side-label">D pickup <input type="checkbox" data-type="flip" data-state="AK" aria-label="Democrats flip Alaska"></span></label>
+      </div>
+    </section>
+    <section class="panel" aria-labelledby="defense-heading">
+      <div class="panel-head">
+        <h2 id="defense-heading">Democratic seats to defend</h2>
+        <p>These three seats start as <strong>assumed Democratic holds</strong>. Uncheck a state if Republicans flip it.</p>
+      </div>
+      <div class="defense">
+        <label class="race selected" data-key="MI" data-ticker="SENATEMI-26-D"><span class="race-info"><span class="race-name">Michigan</span><span class="race-note">Abdul El-Sayed (D) vs. Mike Rogers (R)</span><span class="market-odds" aria-label="Kalshi snapshot: Democrats 79 percent, Republicans 21 percent"><span class="prob dem" title="Abdul El-Sayed">D 79%</span><span class="prob rep" title="Mike Rogers">R 21%</span><span class="price-status" aria-label="Quote status">Snapshot</span></span></span><span class="side-label">D hold <input type="checkbox" data-type="defend" data-state="MI" checked aria-label="Democrats hold Michigan"></span></label>
+        <label class="race selected" data-key="GA" data-ticker="SENATEGA-26-D"><span class="race-info"><span class="race-name">Georgia</span><span class="race-note">Jon Ossoff (D) vs. Mike Collins (R)</span><span class="market-odds" aria-label="Kalshi snapshot: Democrats 96.4 percent, Republicans 3.6 percent"><span class="prob dem" title="Jon Ossoff">D 96.4%</span><span class="prob rep" title="Mike Collins">R 3.6%</span><span class="price-status" aria-label="Quote status">Snapshot</span></span></span><span class="side-label">D hold <input type="checkbox" data-type="defend" data-state="GA" checked aria-label="Democrats hold Georgia"></span></label>
+        <label class="race selected" data-key="NH" data-ticker="SENATENH-26-D"><span class="race-info"><span class="race-name">New Hampshire</span><span class="race-note">Chris Pappas (D) vs. John Sununu (R)</span><span class="market-odds" aria-label="Kalshi snapshot: Democrats 93.1 percent, Republicans 6.9 percent"><span class="prob dem" title="Chris Pappas">D 93.1%</span><span class="prob rep" title="John Sununu">R 6.9%</span><span class="price-status" aria-label="Quote status">Snapshot</span></span></span><span class="side-label">D hold <input type="checkbox" data-type="defend" data-state="NH" checked aria-label="Democrats hold New Hampshire"></span></label>
+      </div>
+      <p class="source-notice"><strong>About Refresh:</strong> Fetches publicly available Kalshi contract prices through a web proxy, with a public market-data fallback that can be delayed about 15 minutes. If a source is blocked, the page keeps the last displayed odds and marks that race as unavailable. The refresh does not change your checked scenarios, and probabilities are <strong>not</strong> counted votes.</p>
+      <p class="footnote"><strong>How the math works:</strong> The starting caucus count is 47 Democratic-aligned seats (including two independents) and 53 Republican seats. Each Republican seat flipped adds one Democratic seat; each Democratic seat lost subtracts one. The scenario assumes all other races stay with their starting party.</p>
+      <p class="footnote"><strong>Tie-breaker:</strong> At 50–50, Vice President JD Vance can break tie votes, so Republicans retain organizational control. An outright Democratic majority requires 51 seats.</p>
+      <div class="actions">
+        <button type="button" id="reset">Reset scenario</button>
+        <button type="button" id="share" class="primary">Copy scenario link</button>
+      </div>
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    </section>
+  </div>
+  <footer class="bottom">This file opens locally; an internet connection is needed only to refresh odds. Market quotes may be delayed, stale, or unavailable. Manual scenarios are not election results. Checkbox choices are saved locally.</footer>
+</main>
+<script>
+(() => {
+  'use strict';
+  const STORAGE_KEY = 'senate-2026-tracker-v1';
+  // Race lists come from the markup, so adding/removing a row is the only edit needed.
+  const statesOf = type => Array.from(document.querySelectorAll(`input[data-type="${type}"]`), i => i.dataset.state);
+  const FLIPS = statesOf('flip');
+  const DEFENSES = statesOf('defend');
+  const START_DEM = 47;          // Democratic caucus seats before this cycle (incl. 2 independents)
+  const TOTAL_SEATS = 100;
+  const MAJORITY = 51;           // 50 is a tie, broken by the Republican VP
+  const NEEDED = MAJORITY - START_DEM;
+  const DEFAULT = {flips: [], holds: [...DEFENSES]};
+  const $ = (id) => document.getElementById(id);
+  function validArray(arr, allowed) {return Array.isArray(arr) ? allowed.filter(x => arr.includes(x)) : [];}
+  function decodeState(encoded) {
+    try {
+      const state = JSON.parse(encoded);
+      if (!state || typeof state !== 'object') return null;
+      return {flips:validArray(state.flips,FLIPS),holds:validArray(state.holds,DEFENSES)};
+    } catch {return null;}
+  }
+  let state = {...DEFAULT};
+  const query = new URLSearchParams(window.location.search);
+  const f = query.get('f'), h = query.get('h');
+  if (f !== null || h !== null) {
+    // A missing h= means "no defenses lost", not "all defenses lost".
+    state = {
+      flips: (f||'').split(',').filter(x=>FLIPS.includes(x)),
+      holds: h === null ? [...DEFENSES] : h.split(',').filter(x=>DEFENSES.includes(x))
+    };
+    // Strip the params once loaded so later edits (saved locally) aren't
+    // overwritten by the shared scenario on the next reload.
+    try { history.replaceState(null, '', window.location.pathname + window.location.hash); } catch {}
+  } else {
+    try {state = decodeState(localStorage.getItem(STORAGE_KEY)) || {...DEFAULT};} catch {state = {...DEFAULT};}
+  }
+  function render() {
+    document.querySelectorAll('input[data-type]').forEach(input => {
+      const checked = (input.dataset.type==='flip' ? state.flips : state.holds).includes(input.dataset.state);
+      input.checked = checked;
+      input.closest('.race').classList.toggle('selected', checked);
+      input.closest('.race').classList.toggle('resisted', input.dataset.type==='defend' && !checked);
+      const label = input.closest('.side-label');
+      if (input.dataset.type==='defend') label.firstChild.textContent = checked ? 'D hold ' : 'R flip ';
+    });
+    const net = state.flips.length - (DEFENSES.length-state.holds.length);
+    const dem = START_DEM + net, rep = TOTAL_SEATS - dem;
+    const short = NEEDED - net;
+    $('seat-count').innerHTML = `${dem} D <small>–</small> ${rep} R`;
+    $('d-seats').style.width = `${dem/TOTAL_SEATS*100}%`;
+    $('seat-graphic').setAttribute('aria-label', `${dem} Democratic caucus seats and ${rep} Republican seats`);
+    $('net-count').innerHTML = `${net>=0?'+':''}${net} <small>/ +${NEEDED} needed</small>`;
+    $('progress-fill').style.width = `${Math.max(0,Math.min(100,(net/NEEDED)*100))}%`;
+    $('flip-counter').textContent = `(${state.flips.length} of ${FLIPS.length})`;
+    $('remaining').textContent = short<=0 ? 'Democratic majority threshold reached' : `${short} more net ${short===1?'seat':'seats'} needed`;
+    const label = $('control-label'), note = $('control-explainer');
+    const tie = TOTAL_SEATS/2;
+    label.className = 'status ' + (dem>=MAJORITY?'green':dem===tie?'amber':'blue');
+    if (dem>=MAJORITY) {label.textContent='Democrats control';note.textContent=`A ${dem}–${rep} Democratic caucus majority in this scenario.`;}
+    else if (dem===tie) {label.textContent='50–50: Republicans control';note.textContent='The vice president casts tie-breaking votes when needed.';}
+    else {label.textContent='Republicans control';note.textContent=`Republicans hold ${rep} seats in this scenario.`;}
+    try {localStorage.setItem(STORAGE_KEY,JSON.stringify(state));} catch {}
+  }
+  document.querySelectorAll('input[data-type]').forEach(input=>input.addEventListener('change',()=>{
+    const key=input.dataset.state, type=input.dataset.type==='flip'?'flips':'holds';
+    state[type] = input.checked ? [...new Set([...state[type],key])] : state[type].filter(x=>x!==key);
+    $('toast').textContent='';
+    render();
+  }));
+  $('reset').addEventListener('click',()=>{state={flips:[],holds:[...DEFENSES]};$('toast').textContent='Scenario reset.';render();});
+  $('share').addEventListener('click',async()=>{
+    const url = new URL(window.location.href);
+    url.searchParams.set('f', state.flips.join(','));
+    url.searchParams.set('h', state.holds.join(','));
+    try {await navigator.clipboard.writeText(url.href); $('toast').textContent='Scenario link copied to clipboard.';}
+    catch { $('toast').textContent='Clipboard unavailable for this local file. You can share its f= and h= URL settings instead.'; }
+  });
+
+  // All market requests are initiated only when the user clicks Refresh.
+  // Browser CORS prevents reading Kalshi directly in a local HTML file.
+  // A third-party, no-key proxy accesses Kalshi's public endpoint; if that
+  // fails, Adjacent's no-key public API offers ~15-minute-delayed prices.
+  const RACE_TICKERS = Object.fromEntries(
+    Array.from(document.querySelectorAll('.race[data-ticker]'), row => [row.dataset.key, row.dataset.ticker])
+  );
+  // Order both sections by the displayed Democratic win probability.
+  // Sorting moves the existing row elements and preserves their event listeners,
+  // selected checkbox state, and saved scenarios. It runs on load and after refresh.
+  function sortRacesByDemOdds() {
+    document.querySelectorAll('#pickup-list, .defense').forEach(container => {
+      const rows = Array.from(container.querySelectorAll(':scope > .race'));
+      const probability = row => {
+        const value = parseFloat(row.querySelector('.prob.dem')?.textContent.replace('D','').replace('%','') || '');
+        return Number.isFinite(value) ? value : -1;
+      };
+      rows.sort((a,b) => probability(b)-probability(a)
+        || a.querySelector('.race-name').textContent.localeCompare(b.querySelector('.race-name').textContent));
+      rows.forEach(row => container.appendChild(row));
+    });
+  }
+  sortRacesByDemOdds();
+  const SOURCE_TIMEOUT_MS = 8500;
+  function percentLabel(value) {
+    const rounded = Math.round(value * 10) / 10;
+    return `${Number.isInteger(rounded) ? rounded.toFixed(0) : rounded.toFixed(1)}%`;
+  }
+  function priceToPercent(value) {
+    if (value === null || value === undefined || value === '') return null;
+    const v = Number(value);
+    return Number.isFinite(v) && v >= 0 && v <= 1 ? v * 100 : null;
+  }
+  function officialPrice(record) {
+    if (!record || typeof record !== 'object') return null;
+    if (record.result === 'yes') return 100;
+    if (record.result === 'no') return 0;
+    const last = priceToPercent(record.last_price_dollars);
+    if (last !== null) return last;
+    const bid = priceToPercent(record.yes_bid_dollars);
+    const ask = priceToPercent(record.yes_ask_dollars);
+    if (bid !== null && ask !== null && ask >= bid) return (bid+ask)/2;
+    return bid ?? ask;
+  }
+  async function fetchJSON(url, timeoutMs = SOURCE_TIMEOUT_MS) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(url, {signal:controller.signal, cache:'no-store', credentials:'omit'});
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.json();
+    } finally { clearTimeout(timeout); }
+  }
+  async function getFreshPrice(ticker) {
+    const publicKalshi = `https://external-api.kalshi.com/trade-api/v2/markets/${encodeURIComponent(ticker)}`;
+    const proxiedKalshi = `https://proxy.cors.dev/raw?url=${encodeURIComponent(publicKalshi)}`;
+    // Most recent Kalshi quote first; proxy might be temporarily unavailable.
+    try {
+      const payload = await fetchJSON(proxiedKalshi);
+      if (payload.market?.ticker !== ticker) throw new Error('Wrong market returned');
+      const prob = officialPrice(payload.market);
+      if (prob === null) throw new Error('No Kalshi price');
+      return {prob, source:'Kalshi via proxy', delayed:false};
+    } catch (e) {
+      // Public backup reflects Kalshi contracts but has approximately 15-minute delay.
+      const adjacent = `https://api.adjacent.markets/api/v1/public/markets/${encodeURIComponent('kalshi:'+ticker)}`;
+      const data = await fetchJSON(adjacent);
+      if (data.ticker !== ticker || data.platform !== 'kalshi') throw new Error('Backup returned the wrong market');
+      const prob = Number(data.probability);
+      if (!Number.isFinite(prob) || prob < 0 || prob > 100 || data.probability == null) throw new Error('Backup has no quote');
+      return {prob, source:'Adjacent (Kalshi data; ~15 min delay)', delayed:true};
+    }
+  }
+  function updateRaceOdds(row, prob, source) {
+    const dem = Math.max(0,Math.min(100,prob));
+    const rep = 100-dem; // opposite outcome approximation for a binary election market
+    const market = row.querySelector('.market-odds');
+    const dLabel=percentLabel(dem), rLabel=percentLabel(rep);
+    market.querySelector('.prob.dem').textContent=`D ${dLabel}`;
+    market.querySelector('.prob.rep').textContent=`R ${rLabel}`;
+    market.setAttribute('aria-label',`Refreshed ${source}: Democratic ${dLabel}, Republican ${rLabel}`);
+    const status = market.querySelector('.price-status');
+    status.textContent = source.includes('Adjacent') ? 'Updated · delayed' : 'Updated';
+    status.className = 'price-status updated';
+    status.title = source;
+  }
+  const refreshButton = $('refresh-odds');
+  refreshButton.addEventListener('click', async () => {
+    if (refreshButton.disabled) return;
+    refreshButton.disabled = true;
+    refreshButton.textContent = '↻ Refreshing…';
+    const feedback = $('odds-feedback');
+    feedback.className = 'odds-feedback';
+    const keys = Object.keys(RACE_TICKERS);
+    feedback.textContent=`Fetching prices for ${keys.length} races…`;
+    // Concurrency-limited pool avoids hammering the free public source.
+    let next=0, done=0, ok=0, delayed=0, missing=[];
+    const worker=async()=>{
+      while(next < keys.length) {
+        const key=keys[next++];
+        const row=document.querySelector(`.race[data-key="${key}"]`);
+        try {
+          const quote=await getFreshPrice(RACE_TICKERS[key]);
+          updateRaceOdds(row,quote.prob,quote.source);
+          if(quote.delayed) delayed++;
+          ok++;
+        } catch(e) {
+          missing.push(row.querySelector('.race-name').textContent);
+          const st=row.querySelector('.price-status');
+          st.textContent='Not refreshed';
+          st.className='price-status failed';
+          st.title='Latest price unavailable; prior price retained.';
+        } finally {
+          done++;
+          feedback.textContent=`Checked ${done} of ${keys.length} races…`;
+        }
+      }
+    };
+    try { await Promise.all(Array.from({length:Math.min(5,keys.length)},worker)); }
+    finally {
+      // Keep original odds when a market cannot be refreshed, then reorder.
+      sortRacesByDemOdds();
+      const time=new Date().toLocaleString('en-US', {timeZone:'America/Chicago',month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'});
+      refreshButton.disabled=false;
+      refreshButton.textContent='↻ Refresh Live Odds';
+      if(ok) {
+        $('odds-stamp').textContent=`Last refresh attempt · ${time}`;
+        feedback.className=missing.length?'odds-feedback warn':'odds-feedback ok';
+        feedback.textContent=`Updated ${ok}/${keys.length} races${delayed?` (${delayed} from ~15-minute-delayed source)`:''}. ${missing.length?`Could not refresh: ${missing.join(', ')}; earlier odds retained.`:'Prices are market quotes, not votes.'}`;
+      } else {
+        feedback.className='odds-feedback warn';
+        feedback.textContent='Unable to retrieve prices. Your saved snapshot remains visible. Check internet access or try again later; the sources may block requests from local HTML files.';
+      }
+    }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
