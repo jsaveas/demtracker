@@ -303,16 +303,30 @@
       return await response.json();
     } finally { clearTimeout(timeout); }
   }
+  const KALSHI_API = 'https://external-api.kalshi.com/trade-api/v2';
+  const viaProxy = url => `https://proxy.cors.dev/raw?url=${encodeURIComponent(url)}`;
+  // Time of the market's most recent trade, which is when Kalshi's last price was set.
+  // (The market's own updated_time tracks metadata edits, not prices.) Optional: null on failure.
+  async function getLastTradeTime(ticker) {
+    try {
+      const data = await fetchJSON(viaProxy(`${KALSHI_API}/markets/trades?ticker=${encodeURIComponent(ticker)}&limit=1`));
+      const trade = data.trades?.[0];
+      if (!trade || trade.ticker !== ticker) return null;
+      const time = new Date(trade.created_time);
+      return Number.isFinite(time.getTime()) ? time : null;
+    } catch { return null; }
+  }
   async function getFreshPrice(ticker) {
-    const publicKalshi = `https://external-api.kalshi.com/trade-api/v2/markets/${encodeURIComponent(ticker)}`;
-    const proxiedKalshi = `https://proxy.cors.dev/raw?url=${encodeURIComponent(publicKalshi)}`;
     // Most recent Kalshi quote first; proxy might be temporarily unavailable.
     try {
-      const payload = await fetchJSON(proxiedKalshi);
+      const [payload, asOf] = await Promise.all([
+        fetchJSON(viaProxy(`${KALSHI_API}/markets/${encodeURIComponent(ticker)}`)),
+        getLastTradeTime(ticker)
+      ]);
       if (payload.market?.ticker !== ticker) throw new Error('Wrong market returned');
       const prob = officialPrice(payload.market);
       if (prob === null) throw new Error('No Kalshi price');
-      return {prob, source:'Kalshi via proxy', delayed:false};
+      return {prob, source:'Kalshi via proxy', delayed:false, asOf};
     } catch (e) {
       // Public backup reflects Kalshi contracts but has approximately 15-minute delay.
       const adjacent = `https://api.adjacent.markets/api/v1/public/markets/${encodeURIComponent('kalshi:'+ticker)}`;
@@ -320,10 +334,18 @@
       if (data.ticker !== ticker || data.platform !== 'kalshi') throw new Error('Backup returned the wrong market');
       const prob = Number(data.probability);
       if (!Number.isFinite(prob) || prob < 0 || prob > 100 || data.probability == null) throw new Error('Backup has no quote');
-      return {prob, source:'Adjacent (Kalshi data; ~15 min delay)', delayed:true};
+      return {prob, source:'Adjacent (Kalshi data; ~15 min delay)', delayed:true, asOf:null};
     }
   }
-  function updateRaceOdds(row, prob, source) {
+  // Times are shown in the viewer's local time zone; the date is added if it isn't today.
+  function formatTime(date, {full=false}={}) {
+    const sameDay = date.toDateString() === new Date().toDateString();
+    const opts = {hour:'numeric', minute:'2-digit'};
+    if (full || !sameDay) Object.assign(opts, {month:'short', day:'numeric'});
+    if (full) Object.assign(opts, {second:'2-digit', timeZoneName:'short'});
+    return date.toLocaleString(undefined, opts);
+  }
+  function updateRaceOdds(row, {prob, source, asOf}) {
     const dem = Math.max(0,Math.min(100,prob));
     const rep = 100-dem; // opposite outcome approximation for a binary election market
     const market = row.querySelector('.market-odds');
@@ -332,9 +354,10 @@
     market.querySelector('.prob.rep').textContent=`R ${rLabel}`;
     market.setAttribute('aria-label',`Refreshed ${source}: Democratic ${dLabel}, Republican ${rLabel}`);
     const status = market.querySelector('.price-status');
-    status.textContent = source.includes('Adjacent') ? 'Updated · delayed' : 'Updated';
+    status.textContent = asOf ? `Last trade ${formatTime(asOf)}`
+      : source.includes('Adjacent') ? 'Delayed · time unknown' : 'Updated · time unknown';
     status.className = 'price-status updated';
-    status.title = source;
+    status.title = asOf ? `${source} · last trade ${formatTime(asOf,{full:true})}` : source;
   }
   const refreshButton = $('refresh-odds');
   refreshButton.addEventListener('click', async () => {
@@ -346,14 +369,15 @@
     const keys = Object.keys(RACE_TICKERS);
     feedback.textContent=`Fetching prices for ${keys.length} races…`;
     // Concurrency-limited pool avoids hammering the free public source.
-    let next=0, done=0, ok=0, delayed=0, missing=[];
+    let next=0, done=0, ok=0, delayed=0, missing=[], newest=null;
     const worker=async()=>{
       while(next < keys.length) {
         const key=keys[next++];
         const row=document.querySelector(`.race[data-key="${key}"]`);
         try {
           const quote=await getFreshPrice(RACE_TICKERS[key]);
-          updateRaceOdds(row,quote.prob,quote.source);
+          updateRaceOdds(row,quote);
+          if(quote.asOf && (!newest || quote.asOf > newest)) newest=quote.asOf;
           if(quote.delayed) delayed++;
           ok++;
         } catch(e) {
@@ -372,11 +396,13 @@
     finally {
       // Keep original odds when a market cannot be refreshed, then reorder.
       sortRacesByDemOdds();
-      const time=new Date().toLocaleString('en-US', {timeZone:'America/Chicago',month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'});
       refreshButton.disabled=false;
       refreshButton.textContent='↻ Refresh Live Odds';
       if(ok) {
-        $('odds-stamp').textContent=`Last refresh attempt · ${time}`;
+        // Stamp with Kalshi's own data time (newest trade across races), not the click time.
+        $('odds-stamp').textContent = newest
+          ? `Kalshi data as of ${formatTime(newest,{full:true})} (latest trade)`
+          : 'Kalshi data time unavailable · delayed source only';
         feedback.className=missing.length?'odds-feedback warn':'odds-feedback ok';
         feedback.textContent=`Updated ${ok}/${keys.length} races${delayed?` (${delayed} from ~15-minute-delayed source)`:''}. ${missing.length?`Could not refresh: ${missing.join(', ')}; earlier odds retained.`:'Prices are market quotes, not votes.'}`;
       } else {
